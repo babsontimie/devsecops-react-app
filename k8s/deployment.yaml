@@ -19,7 +19,6 @@ spec:
         runAsUser: 10100       # High UID
         runAsGroup: 10100
         fsGroup: 10100
-        runAsNonRoot: true     # ✅ Add here at pod-level
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: react-app-sa
@@ -28,7 +27,7 @@ spec:
         - name: react-app
           image: ghcr.io/<org>/<repo>@sha256:<digest>
           ports:
-            - containerPort: 80
+            - containerPort: 8080   # non-root safe port
           securityContext:
             runAsUser: 10100
             runAsNonRoot: true
@@ -47,7 +46,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 80
+              port: 8080
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 5
@@ -55,7 +54,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 80
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
@@ -67,6 +66,7 @@ metadata:
   name: react-app-sa
   namespace: react-app-ns
 automountServiceAccountToken: false
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -82,13 +82,31 @@ spec:
     - Egress
   ingress:
     - from:
-        - podSelector: {} 
+        - podSelector: {}
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080
   egress:
     - to:
-        - podSelector: {} 
+        - podSelector: {}
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: react-app-svc
+  namespace: react-app-ns
+  labels:
+    app: react-app
+spec:
+  type: ClusterIP   # change to LoadBalancer or NodePort if you want external access
+  selector:
+    app: react-app
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80        # client-facing port
+      targetPort: 8080 # container port
