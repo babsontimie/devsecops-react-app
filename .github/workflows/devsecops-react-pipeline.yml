@@ -28,13 +28,12 @@ jobs:
         with:
           node-version: '18'        # Or 20 if your React app supports it
 
-      - name: Install dependencies (React)
-        working-directory: ./frontend   # adjust if your React code is in a subfolder
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
 
       - name: Build React app
-        working-directory: ./frontend
         run: npm run build
+
 
       # Secret Scanning with Gitleaks
       - name: Run Gitleaks
