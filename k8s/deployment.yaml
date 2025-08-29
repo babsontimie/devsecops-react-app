@@ -16,7 +16,7 @@ spec:
         app: react-app
     spec:
       securityContext:
-        runAsUser: 1200         # High UID
+        runAsUser: 1500         # High UID
         runAsGroup: 3000
         fsGroup: 2000
         seccompProfile:
