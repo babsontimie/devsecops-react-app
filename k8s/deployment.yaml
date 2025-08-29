@@ -19,10 +19,11 @@ spec:
         runAsUser: 10100       # High UID
         runAsGroup: 10100
         fsGroup: 10100
+        runAsNonRoot: true     # ✅ Add here at pod-level
         seccompProfile:
           type: RuntimeDefault
-      serviceAccountName: react-app-sa   # Custom SA, not default
-      automountServiceAccountToken: false # Prevents mounting token unless required
+      serviceAccountName: react-app-sa
+      automountServiceAccountToken: false
       containers:
         - name: react-app
           image: ghcr.io/<org>/<repo>@sha256:<digest>
@@ -43,7 +44,6 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          # Liveness & Readiness probes
           livenessProbe:
             httpGet:
               path: /
@@ -67,7 +67,6 @@ metadata:
   name: react-app-sa
   namespace: react-app-ns
 automountServiceAccountToken: false
-
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -83,13 +82,13 @@ spec:
     - Egress
   ingress:
     - from:
-        - podSelector: {} # allow from same namespace pods (tighten further if needed)
+        - podSelector: {} 
       ports:
         - protocol: TCP
           port: 80
   egress:
     - to:
-        - podSelector: {} # allow within namespace
+        - podSelector: {} 
       ports:
         - protocol: TCP
           port: 80
