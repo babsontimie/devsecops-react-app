@@ -20,6 +20,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # ----------------------------
+      # Setup Java (for backend)
+      # ----------------------------
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'   # Recommended distribution
+          java-version: '17'        # Adjust if your backend needs 11 or 21
+          cache: 'maven'
+
+      # ----------------------------
+      # Setup Node.js (for React frontend)
+      # ----------------------------
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'        # Or 20 if your React app supports it
+          cache: 'npm'
+
+      - name: Install dependencies (React)
+        working-directory: ./frontend   # adjust if your React code is in a subfolder
+        run: npm ci
+
+      - name: Build React app
+        working-directory: ./frontend
+        run: npm run build
+
       # Secret Scanning with Gitleaks
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
