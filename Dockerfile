@@ -1,7 +1,10 @@
 # Stage 1: Build React app
 FROM node:18 AS build
 WORKDIR /app
-COPY ./frontend/package*.json ./
+# Copy all files first
+COPY ./frontend ./frontend
+# Move into frontend folder
+WORKDIR /app/frontend
 RUN npm install
 COPY . .
 RUN npm run build
