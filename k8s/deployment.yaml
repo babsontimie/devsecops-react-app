@@ -16,9 +16,9 @@ spec:
         app: react-app
     spec:
       securityContext:
-        runAsUser: 1500         # High UID
-        runAsGroup: 3000
-        fsGroup: 2000
+        runAsUser: 10001         # High UID
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: react-app-sa   # Custom SA, not default
