@@ -15,20 +15,19 @@ spec:
       labels:
         app: react-app
     spec:
-      # Pod-level security context
       securityContext:
-        runAsUser: 1000         # Use high UID to avoid host conflicts
+        runAsUser: 1000         # High UID
         runAsGroup: 3000
         fsGroup: 2000
         seccompProfile:
-          type: RuntimeDefault  # Use default seccomp profile
+          type: RuntimeDefault
+      serviceAccountName: react-app-sa   # Custom SA, not default
+      automountServiceAccountToken: false # Prevents mounting token unless required
       containers:
         - name: react-app
-          # Use immutable image by digest
           image: ghcr.io/<org>/<repo>@sha256:<digest>
           ports:
             - containerPort: 80
-          # Container-level security context
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
@@ -36,24 +35,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          # Liveness & Readiness probes
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 15
-            timeoutSeconds: 5
-            failureThreshold: 3
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
-          # Resource requests & limits
           resources:
             requests:
               cpu: "100m"
@@ -61,4 +42,37 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-      serviceAccountName: react-app-sa  # Avoid mounting default service account tokens
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: react-app-sa
+  namespace: react-app-ns
+automountServiceAccountToken: false
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: react-app-netpol
+  namespace: react-app-ns
+spec:
+  podSelector:
+    matchLabels:
+      app: react-app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector: {} # allow from same namespace pods (tighten further if needed)
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    - to:
+        - podSelector: {} # allow within namespace
+      ports:
+        - protocol: TCP
+          port: 80
