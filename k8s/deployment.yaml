@@ -16,9 +16,10 @@ spec:
     spec:
       # Pod-level security context
       securityContext:
-        runAsUser: 1000        # Avoid running as root
+        runAsUser: 1000            # Avoid running as root
         runAsGroup: 3000
         fsGroup: 2000
+        automountServiceAccountToken: false
       containers:
         - name: react-app
           # Use immutable image by digest
@@ -29,9 +30,12 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+            seccompProfile:
+              type: RuntimeDefault
           # Resource requests & limits
           resources:
             requests:
@@ -40,3 +44,17 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
+          # Liveness probe
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          # Readiness probe
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
