@@ -21,9 +21,7 @@ COPY --from=build /app/frontend/build /usr/share/nginx/html
 # Change ownership of the files
 RUN chown -R appuser:appgroup /usr/share/nginx/html
 # Switch to non-root user
-
 USER 10100:10100
-
 
 EXPOSE 80
 # Add HEALTHCHECK
