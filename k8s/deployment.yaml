@@ -1,7 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: react-app-ns
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: react-app
+  namespace: react-app-ns
   labels:
     app: react-app
 spec:
@@ -16,10 +23,10 @@ spec:
     spec:
       # Pod-level security context
       securityContext:
-        runAsUser: 1000            # Avoid running as root
+        runAsUser: 1000      # High UID
         runAsGroup: 3000
         fsGroup: 2000
-        automountServiceAccountToken: false
+      automountServiceAccountToken: false
       containers:
         - name: react-app
           # Use immutable image by digest
@@ -30,10 +37,10 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             runAsNonRoot: true
-            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+            readOnlyRootFilesystem: true
             seccompProfile:
               type: RuntimeDefault
           # Resource requests & limits
@@ -44,17 +51,36 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          # Liveness probe
+          # Liveness and Readiness probes
           livenessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 10
-            periodSeconds: 20
-          # Readiness probe
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: react-app-network
+  namespace: react-app-ns
+spec:
+  podSelector:
+    matchLabels:
+      app: react-app
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress: []
