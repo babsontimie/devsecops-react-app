@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'        # Or 20 if your React app supports it
-          cache: 'npm'
 
       - name: Install dependencies (React)
         working-directory: ./frontend   # adjust if your React code is in a subfolder
