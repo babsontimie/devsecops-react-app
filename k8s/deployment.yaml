@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: react-app
-  namespace: react-app-ns   # Dedicated namespace
+  namespace: react-app-ns
   labels:
     app: react-app
 spec:
@@ -17,13 +17,15 @@ spec:
     spec:
       # Pod-level security context
       securityContext:
-        runAsUser: 1000        # High UID
+        runAsUser: 1000         # Use high UID to avoid host conflicts
         runAsGroup: 3000
         fsGroup: 2000
-      automountServiceAccountToken: false  # Disable default SA token
+        seccompProfile:
+          type: RuntimeDefault  # Use default seccomp profile
       containers:
         - name: react-app
-          image: ghcr.io/<org>/<repo>@sha256:<digest>  # Immutable image by digest
+          # Use immutable image by digest
+          image: ghcr.io/<org>/<repo>@sha256:<digest>
           ports:
             - containerPort: 80
           # Container-level security context
@@ -34,6 +36,23 @@ spec:
             capabilities:
               drop:
                 - ALL
+          # Liveness & Readiness probes
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           # Resource requests & limits
           resources:
             requests:
@@ -42,33 +61,4 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          # Liveness & readiness probes
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: react-app-network-policy
-  namespace: react-app-ns
-spec:
-  podSelector:
-    matchLabels:
-      app: react-app
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from: []   # Restrict ingress, can add allowed sources
-  egress:
-    - to: []     # Restrict egress, can add allowed destinations
+      serviceAccountName: react-app-sa  # Avoid mounting default service account tokens
