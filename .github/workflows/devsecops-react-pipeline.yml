@@ -66,6 +66,11 @@ jobs:
           docker build -t $IMAGE_NAME .
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
+      # - name: Build Docker image
+      #   run: |
+      #     docker build -t ghcr.io/${{ github.repository }}:latest .
+
+
       # Container scanning with Trivy
       - name: Run Trivy Scan
         uses: aquasecurity/trivy-action@master
@@ -84,6 +89,25 @@ jobs:
       - name: Push Docker image
         run: |
           docker push ${{ env.IMAGE_NAME }}
+          
+      # # Push Docker image to GHCR
+      # - name: Push Docker image
+      #   run: |
+      #     docker push ghcr.io/${{ github.repository }}:latest
+
+      - name: Get image digest
+        id: digest
+        run: |
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}:latest)
+          echo "DIGEST=$digest" >> $GITHUB_ENV
+          echo "Image digest: $digest"
+
+      - name: Update k8s deployment.yaml with digest
+        run: |
+          sed -i "s|image: ghcr.io/.*/.*:latest|image: $DIGEST|" k8s/deployment.yaml   
+
+      
+
 
   deploy:
     runs-on: ubuntu-latest
