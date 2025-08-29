@@ -8,7 +8,7 @@ OWASP ZAP DAST
 Since React is frontend-only, OWASP ZAP will scan your deployed UI for vulnerabilities (XSS, misconfigurations, etc.).
 That works fine — just keep in mind there’s no backend API in this setup unless you deploy one alongside.
 
-🚀 Workflow Recap for React
+'''🚀 Workflow Recap for React
 
 Build React → Dockerize with NGINX
 
@@ -18,4 +18,4 @@ Deploy to AKS
 
 Run Gitleaks, Semgrep, Trivy, Checkov ✅
 
-Run OWASP ZAP DAST against the React frontend ✅
+Run OWASP ZAP DAST against the React frontend ✅'''
