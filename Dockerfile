@@ -11,6 +11,15 @@ RUN npm run build
 
 # Stage 2: Serve with NGINX
 FROM nginx:alpine
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Copy build files
 COPY --from=build /app/frontend/build /usr/share/nginx/html
+# Change ownership of the files
+RUN chown -R appuser:appgroup /usr/share/nginx/html
+# Switch to non-root user
+USER appuser
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
