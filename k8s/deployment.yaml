@@ -15,8 +15,8 @@ spec:
       labels:
         app: react-app
     spec:
-      securityContext:
-        runAsUser: 10100       # High UID
+      securityContext:           # Pod-level security context
+        runAsUser: 10100
         runAsGroup: 10100
         fsGroup: 10100
         seccompProfile:
@@ -27,15 +27,16 @@ spec:
         - name: react-app
           image: ghcr.io/<org>/<repo>@sha256:<digest>
           ports:
-            - containerPort: 8080   # non-root safe port
-          securityContext:
-            runAsUser: 10100
+            - containerPort: 80
+          securityContext:       # Container-level security context
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
+            runAsUser: 10100      # Must be a high UID
+
           resources:
             requests:
               cpu: "100m"
