@@ -15,28 +15,29 @@ spec:
       labels:
         app: react-app
     spec:
-      securityContext:           # Pod-level security context
-        runAsUser: 10100
+      # Pod-level security context
+      securityContext:
+        runAsUser: 10100       # High UID
         runAsGroup: 10100
         fsGroup: 10100
         seccompProfile:
           type: RuntimeDefault
-      serviceAccountName: react-app-sa
+      serviceAccountName: react-app-sa   # Non-default service account
       automountServiceAccountToken: false
       containers:
         - name: react-app
           image: ghcr.io/<org>/<repo>@sha256:<digest>
           ports:
             - containerPort: 80
-          securityContext:       # Container-level security context
+          # Container-level security context
+          securityContext:
             runAsNonRoot: true
+            runAsUser: 10100        # High UID matching Dockerfile
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
-            runAsUser: 10100      # Must be a high UID
-
           resources:
             requests:
               cpu: "100m"
@@ -44,22 +45,25 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
+          # Liveness probe
           livenessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: 80
             initialDelaySeconds: 10
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 3
+          # Readiness probe
           readinessProbe:
             httpGet:
               path: /
-              port: 8080
+              port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 3
+
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -83,31 +87,13 @@ spec:
     - Egress
   ingress:
     - from:
-        - podSelector: {}
+        - podSelector: {}  # Only allow traffic from same namespace (tighten if needed)
       ports:
         - protocol: TCP
-          port: 8080
+          port: 80
   egress:
     - to:
-        - podSelector: {}
+        - podSelector: {}  # Only allow traffic within namespace
       ports:
         - protocol: TCP
-          port: 8080
-          
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: react-app-svc
-  namespace: react-app-ns
-  labels:
-    app: react-app
-spec:
-  type: ClusterIP   # change to LoadBalancer or NodePort if you want external access
-  selector:
-    app: react-app
-  ports:
-    - name: http
-      protocol: TCP
-      port: 80        # client-facing port
-      targetPort: 8080 # container port
+          port: 80
