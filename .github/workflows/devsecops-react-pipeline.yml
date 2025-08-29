@@ -23,15 +23,20 @@ jobs:
       # ----------------------------
       # Setup Node.js (for React frontend)
       # ----------------------------
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'        # Or 20 if your React app supports it
+          node-version: 18
+
+      - name: Create React app
+        run: npx create-react-app frontend
 
       - name: Install dependencies
+        working-directory: ./frontend
         run: npm install
 
       - name: Build React app
+        working-directory: ./frontend
         run: npm run build
 
 
