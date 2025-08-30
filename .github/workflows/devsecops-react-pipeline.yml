@@ -103,7 +103,7 @@ jobs:
       - name: Update k8s deployment.yaml with digest
         run: |
           sed -i "s|image: ghcr.io/.*/.*:latest|image: $DIGEST|" k8s/deployment.yaml   
-
+          
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-scan
@@ -126,9 +126,9 @@ jobs:
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.AKS_RG }}
-          cluster-name: ${{ secrets.AKS_CLUSTER }}
+        cluster-name: ${{ secrets.AKS_CLUSTER }}
 
-      - name: Create namespace
+      - name: Create namespace if not exists
         run: kubectl create namespace react-app-ns || echo "Namespace already exists"
 
       - name: Create GHCR pull secret
@@ -140,5 +140,11 @@ jobs:
             --docker-email=${{ secrets.GH_EMAIL }} \
             -n react-app-ns || echo "Secret already exists"
 
+      - name: Add imagePullSecrets to deployment.yaml
+        run: |
+          if ! grep -q "imagePullSecrets" k8s/deployment.yaml; then
+            sed -i '/spec:/a \  imagePullSecrets:\n  - name: ghcr-secret' k8s/deployment.yaml
+          fi
+
       - name: Deploy to AKS
-        run: kubectl apply -f k8s/deployment.yaml
+        run: kubectl apply -f k8s/deployment.yaml -n react-app-ns
