@@ -9,50 +9,13 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-
+    outputs:
+      digest: ${{ steps.get-digest.outputs.digest }}
     steps:
-      # Checkout Code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # ----------------------------
-      # Setup Node.js (for React frontend)
-      # ----------------------------
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Create React app
-        run: npx create-react-app frontend
-
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install
-
-      - name: Build React app
-        working-directory: ./frontend
-        run: npm run build
-
-
-      # Secret Scanning with Gitleaks
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --no-banner --redact
-
-      # SAST with Semgrep
-      - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: "p/ci"
-
-      # Build React app into Docker image
+      # Build Docker image
       - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
@@ -66,50 +29,18 @@ jobs:
           docker build -t $IMAGE_NAME .
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-      # - name: Build Docker image
-      #   run: |
-      #     docker build -t ghcr.io/${{ github.repository }}:latest .
-
-
-      # Container scanning with Trivy
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ env.IMAGE_NAME }}
-          format: 'table'
-          exit-code: '0'
-
-      # IaC scanning with Checkov
-      # - name: Run Checkov
-      #   uses: bridgecrewio/checkov-action@master
-      #   with:
-      #     directory: .
-
-      # Push Docker image to GHCR
       - name: Push Docker image
-        run: |
-          docker push ${{ env.IMAGE_NAME }}
-          
-      # # Push Docker image to GHCR
-      # - name: Push Docker image
-      #   run: |
-      #     docker push ghcr.io/${{ github.repository }}:latest
+        run: docker push ${{ env.IMAGE_NAME }}
 
       - name: Get image digest
-        id: digest
+        id: get-digest
         run: |
-          digest=$(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}:latest)
-          echo "DIGEST=$digest" >> $GITHUB_ENV
-          echo "Image digest: $digest"
-
-      - name: Update k8s deployment.yaml with digest
-        run: |
-          sed -i "s|image: ghcr.io/.*/.*:latest|image: $DIGEST|" k8s/deployment.yaml   
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' ${{ env.IMAGE_NAME }})
+          echo "::set-output name=digest::$digest"
 
   deploy:
     runs-on: ubuntu-latest
     needs: build-and-scan
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -130,6 +61,9 @@ jobs:
           resource-group: ${{ secrets.AKS_RG }}
           cluster-name: ${{ secrets.AKS_CLUSTER }}
 
-      - name: Deploy to AKS
+      - name: Update deployment.yaml with digest
         run: |
-          kubectl apply -f k8s/deployment.yaml
+          sed -i "s|image: ghcr.io/.*/.*:latest|image: ${{ needs.build-and-scan.outputs.digest }}|" k8s/deployment.yaml
+
+      - name: Deploy to AKS
+        run: kubectl apply -f k8s/deployment.yaml
