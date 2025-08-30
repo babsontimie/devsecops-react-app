@@ -128,19 +128,17 @@ jobs:
           resource-group: ${{ secrets.AKS_RG }}
           cluster-name: ${{ secrets.AKS_CLUSTER }}
 
-      - name: Ensure namespace exists
-        run: |
-          kubectl get namespace react-app-ns || kubectl create namespace react-app-ns
-          
+      - name: Create namespace
+        run: kubectl create namespace react-app-ns || echo "Namespace already exists"
+
       - name: Create GHCR pull secret
         run: |
           kubectl create secret docker-registry ghcr-secret \
             --docker-server=ghcr.io \
-            --docker-username=${{ github.actor }} \
-            --docker-password=${{ secrets.GITHUB_TOKEN }} \
-            --docker-email=oktbabs@gmail.com \
+            --docker-username=${{ secrets.GH_USERNAME }} \
+            --docker-password=${{ secrets.GH_PAT }} \
+            --docker-email=${{ secrets.GH_EMAIL }} \
             -n react-app-ns || echo "Secret already exists"
 
       - name: Deploy to AKS
-        run: |
-          kubectl apply -f k8s/deployment.yaml
+        run: kubectl apply -f k8s/deployment.yaml
