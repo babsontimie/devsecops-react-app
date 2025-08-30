@@ -17,9 +17,9 @@ spec:
     spec:
       # Pod-level security context
       securityContext:
-        runAsUser: 10100       # High UID
-        runAsGroup: 10100
-        fsGroup: 10100
+        runAsUser: 11100       # High UID
+        runAsGroup: 11100
+        fsGroup: 11100
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: react-app-sa   # Non-default service account
@@ -32,7 +32,7 @@ spec:
           # Container-level security context
           securityContext:
             runAsNonRoot: true
-            runAsUser: 10100        # High UID matching Dockerfile
+            runAsUser: 11100        # High UID matching Dockerfile
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
