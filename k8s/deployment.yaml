@@ -17,9 +17,9 @@ spec:
     spec:
       # Pod-level security context
       securityContext:
-        runAsUser: 11100       # High UID
-        runAsGroup: 11100
-        fsGroup: 11100
+        # runAsUser: 11100       # High UID
+        # runAsGroup: 11100
+        # fsGroup: 11100
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: react-app-sa   # Non-default service account
