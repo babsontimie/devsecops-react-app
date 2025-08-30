@@ -131,6 +131,15 @@ jobs:
       - name: Ensure namespace exists
         run: |
           kubectl get namespace react-app-ns || kubectl create namespace react-app-ns
+          
+      - name: Create GHCR pull secret
+        run: |
+          kubectl create secret docker-registry ghcr-secret \
+            --docker-server=ghcr.io \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GITHUB_TOKEN }} \
+            --docker-email=oktbabs@gmail.com \
+            -n react-app-ns || echo "Secret already exists"
 
       - name: Deploy to AKS
         run: |
