@@ -126,7 +126,7 @@ jobs:
         uses: azure/aks-set-context@v3
         with:
           resource-group: ${{ secrets.AKS_RG }}
-        cluster-name: ${{ secrets.AKS_CLUSTER }}
+          cluster-name: ${{ secrets.AKS_CLUSTER }}
 
       - name: Create namespace if not exists
         run: kubectl create namespace react-app-ns || echo "Namespace already exists"
