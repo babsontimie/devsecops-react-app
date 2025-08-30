@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: react-app
   namespace: react-app-ns
+  labels:
+    app: react-app
 spec:
   replicas: 2
   selector:
@@ -13,19 +15,35 @@ spec:
       labels:
         app: react-app
     spec:
+      serviceAccountName: react-app-sa
       imagePullSecrets:
-        - name: ghcr-secret  # <--- added secret for GHCR      
+        - name: ghcr-secret
       containers:
         - name: react-app
           image: ghcr.io/babsontimie/devsecops-react-app:latest
           ports:
             - containerPort: 80
           securityContext:
-            runAsUser: 10100
             runAsNonRoot: true
+            runAsUser: 10100
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             requests:
               cpu: "100m"
@@ -33,21 +51,6 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 10
-            periodSeconds: 15
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 80
-            initialDelaySeconds: 5
-            periodSeconds: 10
-      imagePullSecrets:
-        - name: ghcr-secret
-
 
 ---
 apiVersion: v1
