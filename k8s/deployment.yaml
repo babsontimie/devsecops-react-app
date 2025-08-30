@@ -23,6 +23,8 @@ spec:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+          imagePullSecrets:
+            - name: ghcr-secret  # <--- added secret for GHCR
           resources:
             requests:
               cpu: "100m"
