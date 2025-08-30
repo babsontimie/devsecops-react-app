@@ -140,11 +140,15 @@ jobs:
             --docker-email=${{ secrets.GH_EMAIL }} \
             -n react-app-ns || echo "Secret already exists"
 
+      # - name: Add imagePullSecrets to deployment.yaml
+      #   run: |
+      #     if ! grep -q "imagePullSecrets" k8s/deployment.yaml; then
+      #       sed -i '/spec:/a \  imagePullSecrets:\n  - name: ghcr-secret' k8s/deployment.yaml
+      #     fi
+          
       - name: Add imagePullSecrets to deployment.yaml
         run: |
-          if ! grep -q "imagePullSecrets" k8s/deployment.yaml; then
-            sed -i '/spec:/a \  imagePullSecrets:\n  - name: ghcr-secret' k8s/deployment.yaml
-          fi
+          sed -i '/spec:/,/containers:/ s/spec:/&\n      imagePullSecrets:\n        - name: ghcr-secret/' k8s/deployment.yaml
 
       - name: Deploy to AKS
         run: kubectl apply -f k8s/deployment.yaml -n react-app-ns
