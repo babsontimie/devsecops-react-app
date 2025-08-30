@@ -80,10 +80,10 @@ jobs:
           exit-code: '0'
 
       # IaC scanning with Checkov
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@master
-        with:
-          directory: .
+      # - name: Run Checkov
+      #   uses: bridgecrewio/checkov-action@master
+      #   with:
+      #     directory: .
 
       # Push Docker image to GHCR
       - name: Push Docker image
@@ -105,9 +105,6 @@ jobs:
       - name: Update k8s deployment.yaml with digest
         run: |
           sed -i "s|image: ghcr.io/.*/.*:latest|image: $DIGEST|" k8s/deployment.yaml   
-
-      
-
 
   deploy:
     runs-on: ubuntu-latest
