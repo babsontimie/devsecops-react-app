@@ -61,9 +61,13 @@ jobs:
           resource-group: ${{ secrets.AKS_RG }}
           cluster-name: ${{ secrets.AKS_CLUSTER }}
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl get namespace react-app-ns || kubectl create namespace react-app-ns
+
       - name: Update deployment.yaml with digest
         run: |
-          sed -i "s|image: ghcr.io/.*/.*:latest|image: ${{ needs.build-and-scan.outputs.digest }}|" k8s/deployment.yaml
+          sed -i "s|image: ghcr.io/.*/.*:latest|image: ${{ needs.build-and-scan.outputs.digest }}|" k8s/deployment.yaml          
 
       - name: Deploy to AKS
         run: kubectl apply -f k8s/deployment.yaml
