@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: react-app
   namespace: react-app-ns
-  labels:
-    app: react-app
 spec:
   replicas: 2
   selector:
@@ -15,29 +13,16 @@ spec:
       labels:
         app: react-app
     spec:
-      # Pod-level security context
-      securityContext:
-        runAsUser: 11100       # High UID
-        runAsGroup: 11100
-        fsGroup: 11100
-        seccompProfile:
-          type: RuntimeDefault
-      serviceAccountName: react-app-sa   # Non-default service account
-      automountServiceAccountToken: false
       containers:
         - name: react-app
-          image: ghcr.io/<org>/<repo>@sha256:<digest>
+          image: ghcr.io/babsontimie/devsecops-react-app:latest
           ports:
             - containerPort: 80
-          # Container-level security context
           securityContext:
+            runAsUser: 10100
             runAsNonRoot: true
-            runAsUser: 11100        # High UID matching Dockerfile
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities:
-              drop:
-                - ALL
           resources:
             requests:
               cpu: "100m"
@@ -45,24 +30,21 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
-          # Liveness probe
           livenessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 15
-            timeoutSeconds: 5
-            failureThreshold: 3
-          # Readiness probe
           readinessProbe:
             httpGet:
               path: /
               port: 80
             initialDelaySeconds: 5
             periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+      imagePullSecrets:
+        - name: ghcr-secret
+
 
 ---
 apiVersion: v1
